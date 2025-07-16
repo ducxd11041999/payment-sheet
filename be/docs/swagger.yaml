@@ -1,0 +1,323 @@
+basePath: /
+definitions:
+  authenhandler.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  repository.Block:
+    properties:
+      id:
+        type: string
+      locked:
+        type: boolean
+      members:
+        items:
+          $ref: '#/definitions/repository.Member'
+        type: array
+      month:
+        type: string
+      transactions:
+        items:
+          $ref: '#/definitions/repository.Transaction'
+        type: array
+    type: object
+  repository.CreateBlock:
+    properties:
+      members:
+        items:
+          $ref: '#/definitions/repository.Member'
+        type: array
+      month:
+        type: string
+    type: object
+  repository.Member:
+    properties:
+      block_id:
+        type: string
+      debt:
+        type: integer
+      id:
+        type: string
+      name:
+        type: string
+      ratio:
+        type: number
+    type: object
+  repository.Transaction:
+    properties:
+      amount:
+        type: integer
+      block_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      details:
+        additionalProperties:
+          type: integer
+        type: object
+      id:
+        type: string
+      payer:
+        type: string
+      ratios:
+        additionalProperties:
+          type: number
+        type: object
+    type: object
+host: localhost:3000
+info:
+  contact:
+    email: ducbph.x@gmail.com
+    name: Bui Phung Huu Duc
+  description: API for managing shared expenses by month
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Expense Tracker API
+  version: "1.0"
+paths:
+  /blocks:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Month and members
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/repository.CreateBlock'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/repository.Block'
+      security:
+      - BearerAuth: []
+      summary: Create a new block
+      tags:
+      - blocks
+  /blocks/{month}/lock:
+    post:
+      parameters:
+      - description: Month
+        in: path
+        name: month
+        required: true
+        type: string
+      responses:
+        "200":
+          description: locked
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Lock a block
+      tags:
+      - blocks
+  /blocks/{month}/members:
+    get:
+      parameters:
+      - description: Month
+        in: path
+        name: month
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repository.Member'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get members of a specific block
+      tags:
+      - members
+  /blocks/{month}/summary:
+    get:
+      parameters:
+      - description: Month
+        in: path
+        name: month
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get summary of member debts in a block
+      tags:
+      - blocks
+  /blocks/{month}/transactions:
+    get:
+      parameters:
+      - description: Month
+        in: path
+        name: month
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repository.Transaction'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get all transactions for a block
+      tags:
+      - transactions
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Month
+        in: path
+        name: month
+        required: true
+        type: string
+      - description: Transaction info
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/repository.Transaction'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add a transaction to a block
+      tags:
+      - transactions
+  /blocks/{month}/unlock:
+    post:
+      parameters:
+      - description: Month
+        in: path
+        name: month
+        required: true
+        type: string
+      responses:
+        "200":
+          description: unlocked
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Unlock a block
+      tags:
+      - blocks
+  /login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/authenhandler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login and get JWT token
+      tags:
+      - auth
+  /members:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repository.Member'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get all members
+      tags:
+      - members
+  /register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: New user
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/authenhandler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
+      tags:
+      - auth
+  /transactions/{id}:
+    delete:
+      description: Removes a transaction and updates member debts accordingly
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete a transaction by ID
+      tags:
+      - transactions
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
