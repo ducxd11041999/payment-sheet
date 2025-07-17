@@ -39,3 +39,15 @@ type CreateBlock struct {
 	Month   string    `json:"month"`
 	Members []*Member `json:"members"`
 }
+
+type UserLog struct {
+	ID          string    `json:"id"`
+	Username    string    `db:"username"`
+	Method      string    `db:"method"`
+	Path        string    `db:"path"`
+	IPAddress   string    `db:"ip_address"`
+	UserAgent   string    `db:"user_agent"`
+	Body        string    `db:"body"`
+	RequestTime string    `db:"request_time"`
+	CreatedAt   time.Time `json:"created_at"`
+}

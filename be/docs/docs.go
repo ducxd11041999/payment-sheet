@@ -308,6 +308,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/logs": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve all user logs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "logs"
+                ],
+                "summary": "Get all user logs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.UserLog"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/members": {
             "get": {
                 "security": [
@@ -507,6 +538,38 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "number"
                     }
+                }
+            }
+        },
+        "repository.UserLog": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ipaddress": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "requestTime": {
+                    "type": "string"
+                },
+                "userAgent": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         }

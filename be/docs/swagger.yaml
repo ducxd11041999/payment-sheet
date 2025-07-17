@@ -69,6 +69,27 @@ definitions:
           type: number
         type: object
     type: object
+  repository.UserLog:
+    properties:
+      body:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      ipaddress:
+        type: string
+      method:
+        type: string
+      path:
+        type: string
+      requestTime:
+        type: string
+      userAgent:
+        type: string
+      username:
+        type: string
+    type: object
 host: localhost:3000
 info:
   contact:
@@ -257,6 +278,25 @@ paths:
       summary: Login and get JWT token
       tags:
       - auth
+  /logs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all user logs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repository.UserLog'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: Get all user logs
+      tags:
+      - logs
   /members:
     get:
       produces:

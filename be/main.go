@@ -152,6 +152,18 @@ func register(c *fiber.Ctx) error {
 	return factory.GetAuth().Register(c)
 }
 
+// @Summary Get all user logs
+// @Description Retrieve all user logs
+// @Tags logs
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {array} repository.UserLog
+// @Router /logs [get]
+func getLogs(c *fiber.Ctx) error {
+	return factory.GetLogging().GetLogs(c)
+}
+
 func main() {
 	factory.Factory()
 	app := factory.GetApp()
@@ -160,8 +172,10 @@ func main() {
 	app.Post("/register", register)
 
 	protected := app.Group("/", jwtware.New(jwtware.Config{
-		SigningKey: authenhandler.JwtSecret, // use your real secret
+		SigningKey: authenhandler.JwtSecret,
 	}))
+
+	protected.Use(factory.GetLogging().LogUserActivity())
 
 	protected.Post("/blocks", createBlock)
 	protected.Post("/blocks/:month/transactions", addTransaction)
@@ -172,6 +186,7 @@ func main() {
 	protected.Post("/blocks/:month/unlock", unlockBlock)
 	protected.Get("/blocks/:month/members", getMembersByBlock)
 	protected.Delete("/transactions/:id", deleteTransaction)
+	protected.Get("/logs", getLogs)
 
 	log.Fatal(app.Listen(":3000"))
 }

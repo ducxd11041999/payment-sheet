@@ -29,3 +29,8 @@ type IUserRepository interface {
 	GetByUsername(username string) (*User, error)
 	Create(user *User) error
 }
+
+type ILogging interface {
+	Write(logEntry UserLog) error
+	GetAllLogs() ([]UserLog, error)
+}
