@@ -243,3 +243,13 @@ func (mb *MainBusiness) GetAllBlocks(c *fiber.Ctx) error {
 	}
 	return c.JSON(blocks)
 }
+
+func (mb *MainBusiness) DeleteBlock(c *fiber.Ctx) error {
+	blockID := c.Params("blockID")
+	err := mb.blockRepo.DeleteBlock(blockID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return nil
+}

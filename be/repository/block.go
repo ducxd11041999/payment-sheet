@@ -84,3 +84,48 @@ func (r *BlockRepository) GetAllBlocks() ([]Block, error) {
 	}
 	return blocks, nil
 }
+
+func (r *BlockRepository) DeleteBlock(blockID string) error {
+	tx, err := r.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	// Xóa chi tiết giao dịch (transaction_details)
+	_, err = tx.Exec(`
+        DELETE FROM transaction_details 
+        WHERE transaction_id IN (
+            SELECT id FROM transactions WHERE block_id = $1
+        )`, blockID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Xoá transactions liên quan
+	_, err = tx.Exec("DELETE FROM transactions WHERE block_id = $1", blockID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Xoá members liên quan
+	_, err = tx.Exec("DELETE FROM members WHERE block_id = $1", blockID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Xoá block
+	_, err = tx.Exec("DELETE FROM blocks WHERE id = $1", blockID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -179,6 +179,21 @@ func getBlocks(c *fiber.Ctx) error {
 	return factory.GetBiz().GetAllBlocks(c)
 }
 
+// DeleteBlock godoc
+// @Summary      Xóa block
+// @Description  Xóa block theo ID, đồng thời xóa toàn bộ members và transactions liên quan
+// @Tags         blocks
+// @Security BearerAuth
+// @Param        blockID   path      string  true  "ID của block"
+// @Success      204       "Xóa thành công"
+// @Failure      400       {object}  map[string]string  "Invalid ID"
+// @Failure      500       {object}  map[string]string  "Internal server error"
+// @Router       /blocks/{blockID} [delete]
+// @Security     ApiKeyAuth
+func deleteBlock(c *fiber.Ctx) error {
+	return factory.GetBiz().DeleteBlock(c)
+}
+
 func main() {
 	factory.Factory()
 	app := factory.GetApp()
@@ -198,6 +213,7 @@ func main() {
 	protected.Use(factory.GetLogging().LogUserActivity())
 	protected.Get("/blocks", getBlocks)
 	protected.Post("/blocks", createBlock)
+	protected.Delete("/blocks/:blockId/", deleteBlock)
 	protected.Post("/blocks/:month/transactions", addTransaction)
 	protected.Get("/blocks/:month/transactions", getTransactionsByBlock)
 	protected.Get("/blocks/:month/summary", getSummary)

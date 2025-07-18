@@ -145,6 +145,37 @@ paths:
       summary: Create a new block
       tags:
       - blocks
+  /blocks/{blockID}:
+    delete:
+      description: Xóa block theo ID, đồng thời xóa toàn bộ members và transactions
+        liên quan
+      parameters:
+      - description: ID của block
+        in: path
+        name: blockID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Xóa thành công
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Xóa block
+      tags:
+      - blocks
   /blocks/{month}/lock:
     post:
       parameters:

@@ -7,6 +7,7 @@ type IBlockRepository interface {
 	Lock(month string) error
 	Unlock(month string) error
 	Create(block Block) error
+	DeleteBlock(blockID string) error
 }
 
 type IMemberRepository interface {

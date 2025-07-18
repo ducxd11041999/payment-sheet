@@ -86,6 +86,55 @@
                 }
             }
         },
+        "/blocks/{blockID}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Xóa block theo ID, đồng thời xóa toàn bộ members và transactions liên quan",
+                "tags": [
+                    "blocks"
+                ],
+                "summary": "Xóa block",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID của block",
+                        "name": "blockID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Xóa thành công"
+                    },
+                    "400": {
+                        "description": "Invalid ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/blocks/{month}/lock": {
             "post": {
                 "security": [
