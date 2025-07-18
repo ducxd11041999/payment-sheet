@@ -99,27 +99,28 @@ func (mb *MainBusiness) AddTransaction(c *fiber.Ctx) error {
 	}
 
 	if isLock {
-		return fiber.ErrForbidden
+		return fiber.NewError(fiber.StatusForbidden, "Page is block")
 	}
 
 	type Req struct {
-		Amount       int                `json:"amount"`
-		Description  string             `json:"description"`
-		Payer        string             `json:"payer"`
-		Participants map[string]float64 `json:"participants"`
+		Amount      int                `json:"amount"`
+		Description string             `json:"description"`
+		Payer       string             `json:"payer"`
+		Ratios      map[string]float64 `json:"ratios"`
 	}
 
 	var req Req
 	if err := c.BodyParser(&req); err != nil {
 		return err
 	}
-	err = mb.ValidateMemberInMonth(month, req.Participants, req.Payer)
+
+	err = mb.ValidateMemberInMonth(month, req.Ratios, req.Payer)
 	if err != nil {
 		return err
 	}
 
 	totalWeight := 0.0
-	for _, w := range req.Participants {
+	for _, w := range req.Ratios {
 		totalWeight += w
 	}
 	if totalWeight == 0 {
@@ -134,7 +135,7 @@ func (mb *MainBusiness) AddTransaction(c *fiber.Ctx) error {
 		Description: req.Description,
 		Amount:      req.Amount,
 		Payer:       req.Payer,
-		Ratios:      req.Participants,
+		Ratios:      req.Ratios,
 		CreatedAt:   created,
 	}
 
@@ -144,7 +145,7 @@ func (mb *MainBusiness) AddTransaction(c *fiber.Ctx) error {
 
 	// Prepare details
 	details := make(map[string]int)
-	for memberID, weight := range req.Participants {
+	for memberID, weight := range req.Ratios {
 		share := int(float64(req.Amount) * (weight / totalWeight))
 		details[memberID] = share
 	}
@@ -231,4 +232,14 @@ func (mb *MainBusiness) DeleteTransaction(c *fiber.Ctx) error {
 	}
 
 	return mb.transactionRepo.Delete(id)
+}
+
+func (mb *MainBusiness) GetAllBlocks(c *fiber.Ctx) error {
+	blocks, err := mb.blockRepo.GetAllBlocks()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to get blocks",
+		})
+	}
+	return c.JSON(blocks)
 }

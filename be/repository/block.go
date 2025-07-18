@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
@@ -64,4 +65,22 @@ func (r *BlockRepository) Create(block Block) error {
 		}
 	}
 	return nil
+}
+
+func (r *BlockRepository) GetAllBlocks() ([]Block, error) {
+	rows, err := r.DB.Query(`SELECT id, month, locked FROM blocks ORDER BY month DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var blocks []Block
+	for rows.Next() {
+		var b Block
+		if err := rows.Scan(&b.ID, &b.Month, &b.Locked); err != nil {
+			return nil, err
+		}
+		blocks = append(blocks, b)
+	}
+	return blocks, nil
 }

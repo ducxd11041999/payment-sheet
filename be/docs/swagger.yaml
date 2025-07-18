@@ -103,6 +103,26 @@ info:
   version: "1.0"
 paths:
   /blocks:
+    get:
+      description: Get list of all blocks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repository.Block'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all blocks
+      tags:
+      - blocks
     post:
       consumes:
       - application/json
@@ -293,6 +313,7 @@ paths:
               $ref: '#/definitions/repository.UserLog'
             type: array
       security:
+      - BearerAuth: []
       - ApiKeyAuth: []
       summary: Get all user logs
       tags:

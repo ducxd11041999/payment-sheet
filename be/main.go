@@ -2,6 +2,7 @@
 package main
 
 import (
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/swagger"
 	_ "github.com/lib/pq"
 	"log"
@@ -155,6 +156,7 @@ func register(c *fiber.Ctx) error {
 // @Summary Get all user logs
 // @Description Retrieve all user logs
 // @Tags logs
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
@@ -164,9 +166,27 @@ func getLogs(c *fiber.Ctx) error {
 	return factory.GetLogging().GetLogs(c)
 }
 
+// GetAllBlocks godoc
+// @Summary Get all blocks
+// @Description Get list of all blocks
+// @Tags blocks
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {array} repository.Block
+// @Failure 500 {object} object
+// @Router /blocks [get]
+func getBlocks(c *fiber.Ctx) error {
+	return factory.GetBiz().GetAllBlocks(c)
+}
+
 func main() {
 	factory.Factory()
 	app := factory.GetApp()
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+	}))
+
 	app.Get("/swagger/*", swagger.HandlerDefault)
 	app.Post("/login", login)
 	app.Post("/register", register)
@@ -176,7 +196,7 @@ func main() {
 	}))
 
 	protected.Use(factory.GetLogging().LogUserActivity())
-
+	protected.Get("/blocks", getBlocks)
 	protected.Post("/blocks", createBlock)
 	protected.Post("/blocks/:month/transactions", addTransaction)
 	protected.Get("/blocks/:month/transactions", getTransactionsByBlock)

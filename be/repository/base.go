@@ -1,6 +1,7 @@
 package repository
 
 type IBlockRepository interface {
+	GetAllBlocks() ([]Block, error)
 	Get(id string) (string, bool, error)
 	GetIDByMonth(month string) (string, bool, error)
 	Lock(month string) error

@@ -1,0 +1,382 @@
+import { useCallback, useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
+import {
+  Typography,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  CircularProgress,
+  Card,
+  CardContent,
+  Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Collapse,
+} from "@mui/material";
+import Grid from "@mui/material/Grid";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+
+interface Transaction {
+  id: string;
+  description: string;
+  amount: number;
+  payer: string;
+  created_at: string;
+  ratios: Record<string, number>;
+  details: Record<string, number>;
+}
+
+interface Member {
+  id: string;
+  name: string;
+  ratio: number;
+  debt: number;
+}
+
+export default function BlockDetail() {
+  const { month } = useParams();
+  const navigate = useNavigate();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [openAdd, setOpenAdd] = useState(false);
+  const [newDesc, setNewDesc] = useState("");
+  const [newAmount, setNewAmount] = useState("");
+  const [newPayer, setNewPayer] = useState("");
+  const [newRatios, setNewRatios] = useState<Record<string, number>>({});
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const token = localStorage.getItem("token");
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [transRes, membersRes] = await Promise.all([
+        axios.get(`http://localhost:3000/blocks/${month}/transactions`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`http://localhost:3000/blocks/${month}/members`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+      setTransactions(transRes.data || []);
+      setMembers(membersRes.data || []);
+    } catch (err) {
+      console.error("Failed to load block details", err);
+      setTransactions([]);
+      setMembers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [month, token]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const memberMap = members.reduce<Record<string, string>>((acc, m) => {
+    acc[m.id] = m.name;
+    return acc;
+  }, {});
+
+  const handleDeleteTransaction = (id: string) => {
+    axios
+      .delete(`http://localhost:3000/transactions/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then(fetchData)
+      .catch((err) => console.error("Failed to delete transaction", err));
+  };
+
+  const openAddDialog = () => {
+    const initialRatios = members.reduce<Record<string, number>>((acc, m) => {
+      acc[m.id] = 0;
+      return acc;
+    }, {});
+    setNewDesc("");
+    setNewAmount("");
+    setNewPayer("");
+    setNewRatios(initialRatios);
+    setOpenAdd(true);
+  };
+
+  const handleAddTransaction = () => {
+    axios
+      .post(
+        `http://localhost:3000/blocks/${month}/transactions`,
+        {
+          description: newDesc,
+          amount: parseFloat(newAmount),
+          payer: newPayer,
+          ratios: newRatios,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      .then(() => {
+        setOpenAdd(false);
+        fetchData();
+      })
+      .catch((err) => console.error("Failed to add transaction", err));
+  };
+
+  const toggleRow = (id: string) => {
+    setExpandedRow(expandedRow === id ? null : id);
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ padding: 3, backgroundColor: "#f5f6fa", minHeight: "100vh" }}>
+      {/* Header */}
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+        <IconButton onClick={() => navigate("/home")}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h5" align="center" sx={{ flexGrow: 1, fontWeight: "bold" }}>
+          Chi tiết tháng {month}
+        </Typography>
+        <Box width="48px" />
+      </Box>
+
+      <Grid container spacing={3}>
+        {/* Bảng chi tiêu */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Card sx={{ boxShadow: 3 }}>
+            <CardContent>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                  Danh sách chi tiêu
+                </Typography>
+                <Button variant="contained" color="primary" onClick={openAddDialog}>
+                  Thêm chi tiêu
+                </Button>
+              </Box>
+              <Table sx={{ width: "100%" }}>
+                <TableHead sx={{ backgroundColor: "#e0e0e0" }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: "bold" }}>#</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Mô tả</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }} align="right">
+                      Số tiền
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }} align="right">
+                      Ngày
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }} align="center">
+                      Hành động
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {transactions.length > 0 ? (
+                    transactions.map((t, index) => (
+                      <>
+                        <TableRow
+                          key={t.id}
+                          hover
+                          onClick={() => toggleRow(t.id)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <TableCell>{index + 1}</TableCell>
+                          <TableCell>{t.description}</TableCell>
+                          <TableCell align="right" sx={{ color: "green", fontWeight: "bold" }}>
+                            {t.amount.toLocaleString()} ₫
+                          </TableCell>
+                          <TableCell align="right">
+                            {new Date(t.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell align="center">
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteTransaction(t.id);
+                              }}
+                              color="error"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
+                            <Collapse in={expandedRow === t.id} timeout="auto" unmountOnExit>
+                              <Box margin={2}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                                  Người trả:{" "}
+                                  <span style={{ color: "#1976d2" }}>
+                                    {memberMap[t.payer] || t.payer}
+                                  </span>
+                                </Typography>
+                                <Typography variant="body2" sx={{ mt: 1 }}>
+                                  Tỉ lệ chia:{" "}
+                                  {Object.entries(t.ratios).map(([memberId, value], idx) => (
+                                    <span key={memberId}>
+                                      <span style={{ fontWeight: "bold", color: "#1976d2" }}>
+                                        {memberMap[memberId]}
+                                      </span>
+                                      : <span style={{ color: "#555" }}>{value}</span>
+                                      {idx < Object.entries(t.ratios).length - 1 && ", "}
+                                    </span>
+                                  ))}
+                                </Typography>
+                                {t.details && (
+                                  <Typography variant="body2" sx={{ mt: 1 }}>
+                                    Số tiền mỗi người:{" "}
+                                    {Object.entries(t.details).map(([memberId, amount], idx) => (
+                                      <span key={memberId}>
+                                        <span style={{ fontWeight: "bold", color: "#1976d2" }}>
+                                          {memberMap[memberId]}
+                                        </span>
+                                        :{" "}
+                                        <span style={{ fontWeight: "bold", color: "green" }}>
+                                          {amount.toLocaleString()} ₫
+                                        </span>
+                                        {idx < Object.entries(t.details).length - 1 && ", "}
+                                      </span>
+                                    ))}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Collapse>
+                          </TableCell>
+                        </TableRow>
+                      </>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} align="center">
+                        Không có chi tiêu nào
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Bảng tổng kết thành viên */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Card sx={{ boxShadow: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom align="center" sx={{ fontWeight: "bold" }}>
+                Tổng kết thành viên
+              </Typography>
+
+              {/* Tổng chi tiêu của phòng */}
+              <Typography variant="subtitle1" align="center" sx={{ mb: 2, fontWeight: "bold", color: "green" }}>
+                Tổng chi tiêu phòng: {transactions.reduce((sum, t) => sum + t.amount, 0).toLocaleString()} ₫
+              </Typography>
+
+              <Table>
+                <TableHead sx={{ backgroundColor: "#e0e0e0" }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: "bold" }}>Tên</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }} align="right">
+                      Đã trả
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }} align="right">
+                      Nợ
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {members.map((m) => {
+                    const paid = transactions
+                      .filter((t) => t.payer === m.id)
+                      .reduce((sum, t) => sum + t.amount, 0);
+                    return (
+                      <TableRow key={m.id}>
+                        <TableCell sx={{ fontWeight: "bold", color: "#1976d2" }}>{m.name}</TableCell>
+                        <TableCell align="right" sx={{ color: "blue", fontWeight: "bold" }}>
+                          {paid.toLocaleString()} ₫
+                        </TableCell>
+                        <TableCell align="right" sx={{ color: m.debt < 0 ? "red" : "green", fontWeight: "bold" }}>
+                          {m.debt.toLocaleString()} ₫
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Dialog thêm chi tiêu */}
+      <Dialog open={openAdd} onClose={() => setOpenAdd(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Thêm chi tiêu mới</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Mô tả"
+            fullWidth
+            margin="normal"
+            value={newDesc}
+            onChange={(e) => setNewDesc(e.target.value)}
+          />
+          <TextField
+            label="Số tiền"
+            type="number"
+            fullWidth
+            margin="normal"
+            value={newAmount}
+            onChange={(e) => setNewAmount(e.target.value)}
+          />
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Người trả</InputLabel>
+            <Select value={newPayer} onChange={(e) => setNewPayer(e.target.value)}>
+              {members.map((m) => (
+                <MenuItem key={m.id} value={m.id}>
+                  {m.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+            Tỉ lệ cho từng thành viên
+          </Typography>
+          {members.map((m) => (
+            <TextField
+              key={m.id}
+              label={`${m.name}`}
+              type="number"
+              fullWidth
+              margin="dense"
+              value={newRatios[m.id] ?? 0}
+              onChange={(e) =>
+                setNewRatios((prev) => ({
+                  ...prev,
+                  [m.id]: parseFloat(e.target.value) || 0,
+                }))
+              }
+            />
+          ))}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenAdd(false)}>Hủy</Button>
+          <Button onClick={handleAddTransaction} variant="contained">
+            Thêm
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}
