@@ -39,8 +39,13 @@ export default function Dashboard() {
       .get("http://localhost:3000/blocks", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setBlocks(res.data))
-      .catch((err) => console.error("Failed to load blocks", err))
+      .then((res) => {
+        setBlocks(res.data && Array.isArray(res.data) ? res.data : []);
+      })
+      .catch((err) => {
+        console.error("Failed to load blocks", err);
+        setBlocks([]);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -49,7 +54,10 @@ export default function Dashboard() {
   }, []);
 
   const handleCreateBlock = () => {
-    const memberArray = members.split(",").map((name) => ({ name: name.trim() }));
+    const memberArray = members
+      .split(",")
+      .map((name) => ({ name: name.trim() }))
+      .filter((m) => m.name);
     axios
       .post(
         "http://localhost:3000/blocks",
@@ -117,34 +125,49 @@ export default function Dashboard() {
               Danh sách các tháng hiện tại
             </Typography>
             <List>
-              {blocks.map((block, i) => (
-                <ListItemButton
-                  key={i}
-                  sx={{
-                    borderBottom: "1px solid #f0f0f0",
-                    "&:hover": { backgroundColor: "#f9f9f9" },
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                  onClick={() => navigate(`/blocks/${block.month}`)}
+              {blocks.length > 0 ? (
+                blocks.map((block, i) => (
+                  <ListItemButton
+                    key={i}
+                    sx={{
+                      borderBottom: "1px solid #f0f0f0",
+                      "&:hover": { backgroundColor: "#f9f9f9" },
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                    onClick={() => navigate(`/blocks/${block.month}`)}
+                  >
+                    <ListItemText
+                      primary={`${i + 1}. Tháng: ${block.month}`}
+                      secondary={block.locked ? "Đã khóa" : "Chưa khóa"}
+                    />
+                    <Tooltip title={block.locked ? "Mở khóa tháng này" : "Khóa tháng này"}>
+                      <IconButton
+                        edge="end"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleLock(block.month, block.locked);
+                        }}
+                      >
+                        {block.locked ? (
+                          <LockIcon color="error" />
+                        ) : (
+                          <LockOpenIcon color="success" />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                  </ListItemButton>
+                ))
+              ) : (
+                <Typography
+                  variant="body2"
+                  color="textSecondary"
+                  align="center"
+                  sx={{ mt: 2 }}
                 >
-                  <ListItemText
-                    primary={`${i + 1}. Tháng: ${block.month}`}
-                    secondary={block.locked ? "Đã khóa" : "Chưa khóa"}
-                  />
-                  <Tooltip title={block.locked ? "Mở khóa tháng này" : "Khóa tháng này"}>
-                    <IconButton
-                      edge="end"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleLock(block.month, block.locked);
-                      }}
-                    >
-                      {block.locked ? <LockIcon color="error" /> : <LockOpenIcon color="success" />}
-                    </IconButton>
-                  </Tooltip>
-                </ListItemButton>
-              ))}
+                  Không có tháng nào được tạo
+                </Typography>
+              )}
             </List>
             <Box mt={2} textAlign="center">
               <Button variant="contained" color="secondary" onClick={() => setOpen(true)}>
@@ -155,7 +178,6 @@ export default function Dashboard() {
         </Card>
       </Box>
 
-      {/* Dialog tạo tháng mới */}
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Tạo tháng mới</DialogTitle>
         <DialogContent>
