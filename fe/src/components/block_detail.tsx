@@ -28,6 +28,7 @@ import {
 import Grid from "@mui/material/Grid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { getTransactions, getMembers, addTransaction, deleteTransaction } from "../api/api";
 
 interface Transaction {
   id: string;
@@ -63,12 +64,8 @@ export default function BlockDetail() {
   const fetchData = useCallback(async () => {
     try {
       const [transRes, membersRes] = await Promise.all([
-        axios.get(`http://localhost:3000/blocks/${month}/transactions`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`http://localhost:3000/blocks/${month}/members`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        getTransactions(month!),
+        getMembers(month!),
       ]);
       setTransactions(transRes.data || []);
       setMembers(membersRes.data || []);
@@ -91,10 +88,7 @@ export default function BlockDetail() {
   }, {});
 
   const handleDeleteTransaction = (id: string) => {
-    axios
-      .delete(`http://localhost:3000/transactions/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    deleteTransaction(id)
       .then(fetchData)
       .catch((err) => console.error("Failed to delete transaction", err));
   };
@@ -112,17 +106,12 @@ export default function BlockDetail() {
   };
 
   const handleAddTransaction = () => {
-    axios
-      .post(
-        `http://localhost:3000/blocks/${month}/transactions`,
-        {
-          description: newDesc,
-          amount: parseFloat(newAmount),
-          payer: newPayer,
-          ratios: newRatios,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
+    addTransaction(month!, {
+      description: newDesc,
+      amount: parseFloat(newAmount),
+      payer: newPayer,
+      ratios: newRatios,
+    })
       .then(() => {
         setOpenAdd(false);
         fetchData();

@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom"; // 👈 thêm dòng này
+import { login } from "../api/api";
 
 const LoginForm = ({ onLogin }: { onLogin: (token: string) => void }) => {
   const [username, setUsername] = useState("");
@@ -34,26 +35,16 @@ const LoginForm = ({ onLogin }: { onLogin: (token: string) => void }) => {
     setSnackbar({ ...snackbar, open: false });
 
     try {
-      const res = await fetch("http://localhost:3000/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+      const token = await login(username, password);
+      onLogin(token);
+      setSnackbar({ open: true, message: "Đăng nhập thành công!", severity: "success" });
+      navigate("/home");
+    } catch (err: any) {
+      setSnackbar({
+        open: true,
+        message: err.message || "Sai thông tin đăng nhập",
+        severity: "error",
       });
-      const data = await res.json();
-
-      if (res.ok) {
-        localStorage.setItem("token", data.token);
-          localStorage.setItem("username", username); // lưu username
-        onLogin(data.token);
-        setSnackbar({ open: true, message: "Đăng nhập thành công!", severity: "success" });
-
-        // 👇 Chuyển hướng đến /home sau khi login
-        navigate("/home");
-      } else {
-        setSnackbar({ open: true, message: data.message || "Sai thông tin đăng nhập", severity: "error" });
-      }
-    } catch (error) {
-      setSnackbar({ open: true, message: "Lỗi kết nối server", severity: "error" });
     } finally {
       setLoading(false);
     }
