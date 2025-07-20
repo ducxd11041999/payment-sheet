@@ -1,13 +1,12 @@
 package middlewarelogging
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"log"
 	"my-source/sheet-payment/be/repository"
 	"time"
-)
 
-import (
+	"github.com/gofiber/fiber/v2"
+
 	jwt "github.com/golang-jwt/jwt/v5"
 )
 
@@ -23,7 +22,6 @@ func (lg *Logger) LogUserActivity() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		start := time.Now()
 
-		// Lấy thông tin từ JWT
 		user := "anonymous"
 		if token := c.Locals("user"); token != nil {
 			if claims, ok := token.(*jwt.Token); ok {
