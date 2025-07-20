@@ -40,6 +40,8 @@ services:
     environment:
     - NODE_ENV=development
     - REACT_APP_API_URL=http://localhost:3000
+    depends_on:
+      - backend
 
   nginx:
     image: nginx:alpine

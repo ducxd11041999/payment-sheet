@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
     Typography,
     List,
@@ -23,7 +22,8 @@ import {
 } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
-import { getBlocks, createBlock, toggleLock } from "../api/api";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { getBlocks, createBlock, toggleLock, deleteBlock } from "../api/api";
 
 export default function Dashboard() {
     const [blocks, setBlocks] = useState<any[]>([]);
@@ -32,7 +32,6 @@ export default function Dashboard() {
     const [month, setMonth] = useState("");
     const [members, setMembers] = useState("");
     const username = localStorage.getItem("username") || "User";
-    const token = localStorage.getItem("token");
     const navigate = useNavigate();
 
     const fetchBlocks = () => {
@@ -52,10 +51,6 @@ export default function Dashboard() {
     }, []);
 
     const handleCreateBlock = () => {
-        const memberArray = members
-            .split(",")
-            .map((name) => ({ name: name.trim() }))
-            .filter((m) => m.name);
         createBlock(month, members.split(","))
             .then(() => {
                 setOpen(false);
@@ -66,13 +61,19 @@ export default function Dashboard() {
             .catch((err) => console.error("Failed to create block", err));
     };
 
-
     const handleToggleLock = (month: string, locked: boolean) => {
         toggleLock(month, locked)
             .then(fetchBlocks)
             .catch(err => console.error("Failed to toggle lock", err));
     };
 
+    const handleDeleteBlock = (month: string) => {
+        if (window.confirm(`Bạn có chắc chắn muốn xóa tháng ${month} không?`)) {
+            deleteBlock(month)
+                .then(fetchBlocks)
+                .catch(err => console.error("Failed to delete block", err));
+        }
+    };
 
     if (loading)
         return (
@@ -134,21 +135,34 @@ export default function Dashboard() {
                                             primary={`${i + 1}. Tháng: ${block.month}`}
                                             secondary={block.locked ? "Đã khóa" : "Chưa khóa"}
                                         />
-                                        <Tooltip title={block.locked ? "Mở khóa tháng này" : "Khóa tháng này"}>
-                                            <IconButton
-                                                edge="end"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleToggleLock(block.month, block.locked);
-                                                }}
-                                            >
-                                                {block.locked ? (
-                                                    <LockIcon color="error" />
-                                                ) : (
-                                                    <LockOpenIcon color="success" />
-                                                )}
-                                            </IconButton>
-                                        </Tooltip>
+                                        <Box display="flex" alignItems="center" gap={1}>
+                                            <Tooltip title={block.locked ? "Mở khóa tháng này" : "Khóa tháng này"}>
+                                                <IconButton
+                                                    edge="end"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleToggleLock(block.month, block.locked);
+                                                    }}
+                                                >
+                                                    {block.locked ? (
+                                                        <LockIcon color="error" />
+                                                    ) : (
+                                                        <LockOpenIcon color="success" />
+                                                    )}
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Xóa tháng này">
+                                                <IconButton
+                                                    edge="end"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteBlock(block.id);
+                                                    }}
+                                                >
+                                                    <DeleteIcon color="error" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
                                     </ListItemButton>
                                 ))
                             ) : (
