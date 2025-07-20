@@ -51,3 +51,11 @@ type UserLog struct {
 	RequestTime string    `db:"request_time"`
 	CreatedAt   time.Time `json:"created_at"`
 }
+
+type UpdateTransactionPayload struct {
+	ID          string
+	Description string
+	Amount      float64
+	Payer       string
+	Ratios      map[string]float64
+}

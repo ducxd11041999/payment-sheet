@@ -25,6 +25,7 @@ type ITransactionRepository interface {
 	Add(tx Transaction) error
 	AddDetails(txID string, details map[string]int) error
 	Delete(id string) error
+	UpdateTransaction(payload UpdateTransactionPayload) error
 }
 
 type IUserRepository interface {

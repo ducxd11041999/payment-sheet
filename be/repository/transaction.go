@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 )
 
 type TransactionRepository struct {
@@ -126,5 +127,79 @@ func (r *TransactionRepository) Delete(id string) error {
 		return err
 	}
 	_, err = r.DB.Exec(`DELETE FROM transactions WHERE id = $1`, id)
+	return err
+}
+
+func (r *TransactionRepository) UpdateTransaction(payload UpdateTransactionPayload) error {
+	tx, err := r.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Lấy block_id của transaction hiện tại
+	var blockID string
+	err = tx.QueryRow(`SELECT block_id FROM transactions WHERE id = $1`, payload.ID).Scan(&blockID)
+	if err != nil {
+		return fmt.Errorf("failed to get block_id: %w", err)
+	}
+
+	// Cập nhật transaction
+	_, err = tx.Exec(`UPDATE transactions SET description=$1, amount=$2, payer=$3 WHERE id=$4`,
+		payload.Description, payload.Amount, payload.Payer, payload.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`DELETE FROM transaction_details WHERE transaction_id=$1`, payload.ID)
+	if err != nil {
+		return err
+	}
+
+	var totalRatio float64
+	for _, ratio := range payload.Ratios {
+		totalRatio += ratio
+	}
+	if totalRatio == 0 {
+		return fmt.Errorf("total ratio cannot be zero")
+	}
+
+	for memberID, ratio := range payload.Ratios {
+		amount := int(float64(payload.Amount) * (ratio / totalRatio))
+		_, err = tx.Exec(
+			`INSERT INTO transaction_details (transaction_id, member_id, amount) VALUES ($1, $2, $3)`,
+			payload.ID, memberID, amount,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := r.UpdateMembersDebtTx(tx, blockID); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (r *TransactionRepository) UpdateMembersDebtTx(tx *sql.Tx, blockID string) error {
+	_, err := tx.Exec(`
+		UPDATE members m
+		SET debt = COALESCE((
+			SELECT SUM(
+				CASE 
+					WHEN t.payer = m.id THEN t.amount  -- đã trả
+					ELSE 0
+				END
+			) - COALESCE((
+				SELECT SUM(td.amount)
+				FROM transaction_details td
+				JOIN transactions t2 ON td.transaction_id = t2.id
+				WHERE t2.block_id = m.block_id AND td.member_id = m.id
+			), 0)
+			FROM transactions t
+			WHERE t.block_id = m.block_id
+		), 0)
+		WHERE m.block_id = $1`, blockID)
 	return err
 }

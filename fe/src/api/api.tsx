@@ -63,3 +63,16 @@ export const login = async (username: string, password: string) => {
   localStorage.setItem("username", username);
   return data.token;
 };
+
+export const updateTransaction = (id: string, payload: {
+  description: string;
+  amount: number;
+  payer: string;
+  ratios: Record<string, number>;
+}) => {
+  return axios.put(`${API_URL}/transactions/${id}`, payload, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
+};

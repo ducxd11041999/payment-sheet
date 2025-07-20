@@ -194,6 +194,25 @@ func deleteBlock(c *fiber.Ctx) error {
 	return factory.GetBiz().DeleteBlock(c)
 }
 
+// UpdateTransaction godoc
+// @Summary      Cập nhật giao dịch
+// @Description  Cập nhật mô tả, số tiền, người trả và tỉ lệ chia của một giao dịch
+// @Tags         transactions
+// @Security     BearerAuth
+// @Param        id         path      string  true  "ID của giao dịch"
+// @Accept       json
+// @Produce      json
+//
+// @Param body body repository.UpdateTransactionPayload true "Update transaction payload"
+// @Success      200       {object}  map[string]string  "Transaction updated"
+// @Failure      400       {object}  map[string]string  "Invalid input"
+// @Failure      404       {object}  map[string]string  "Transaction not found"
+// @Failure      500       {object}  map[string]string  "Internal server error"
+// @Router       /transactions/{id} [put]
+func updateTransaction(c *fiber.Ctx) error {
+	return factory.GetBiz().UpdateTransaction(c)
+}
+
 func main() {
 	factory.Factory()
 	app := factory.GetApp()
@@ -223,6 +242,7 @@ func main() {
 	protected.Get("/blocks/:month/members", getMembersByBlock)
 	protected.Delete("/transactions/:id", deleteTransaction)
 	protected.Get("/logs", getLogs)
+	protected.Put("/transactions/:id", updateTransaction)
 
 	log.Fatal(app.Listen(":3000"))
 }

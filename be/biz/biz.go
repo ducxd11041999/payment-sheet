@@ -253,3 +253,31 @@ func (mb *MainBusiness) DeleteBlock(c *fiber.Ctx) error {
 
 	return nil
 }
+
+func (mb *MainBusiness) UpdateTransaction(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var body struct {
+		Description string             `json:"description"`
+		Amount      float64            `json:"amount"`
+		Payer       string             `json:"payer"`
+		Ratios      map[string]float64 `json:"ratios"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid input"})
+	}
+
+	payload := repository.UpdateTransactionPayload{
+		ID:          id,
+		Description: body.Description,
+		Amount:      body.Amount,
+		Payer:       body.Payer,
+		Ratios:      body.Ratios,
+	}
+
+	if err := mb.transactionRepo.UpdateTransaction(payload); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"message": "Transaction updated successfully"})
+}

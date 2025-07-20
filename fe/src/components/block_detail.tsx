@@ -26,8 +26,15 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { getTransactions, getMembers, addTransaction, deleteTransaction } from "../api/api";
+import {
+  getTransactions,
+  getMembers,
+  addTransaction,
+  deleteTransaction,
+  updateTransaction,
+} from "../api/api";
 
 interface Transaction {
   id: string;
@@ -58,6 +65,7 @@ export default function BlockDetail() {
   const [newPayer, setNewPayer] = useState("");
   const [newRatios, setNewRatios] = useState<Record<string, number>>({});
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
   const token = localStorage.getItem("token");
 
   const fetchData = useCallback(async () => {
@@ -101,21 +109,46 @@ export default function BlockDetail() {
     setNewAmount("");
     setNewPayer("");
     setNewRatios(initialRatios);
+    setEditTransaction(null);
+    setOpenAdd(true);
+  };
+
+  const openEditDialog = (transaction: Transaction) => {
+    setNewDesc(transaction.description);
+    setNewAmount(transaction.amount.toString());
+    setNewPayer(transaction.payer);
+    setNewRatios(transaction.ratios);
+    setEditTransaction(transaction);
     setOpenAdd(true);
   };
 
   const handleAddTransaction = () => {
-    addTransaction(month!, {
-      description: newDesc,
-      amount: parseFloat(newAmount),
-      payer: newPayer,
-      ratios: newRatios,
-    })
-      .then(() => {
-        setOpenAdd(false);
-        fetchData();
+    if (editTransaction) {
+      updateTransaction(editTransaction.id, {
+        description: newDesc,
+        amount: parseFloat(newAmount),
+        payer: newPayer,
+        ratios: newRatios,
       })
-      .catch((err) => console.error("Failed to add transaction", err));
+        .then(() => {
+          setOpenAdd(false);
+          setEditTransaction(null);
+          fetchData();
+        })
+        .catch((err) => console.error("Failed to update transaction", err));
+    } else {
+      addTransaction(month!, {
+        description: newDesc,
+        amount: parseFloat(newAmount),
+        payer: newPayer,
+        ratios: newRatios,
+      })
+        .then(() => {
+          setOpenAdd(false);
+          fetchData();
+        })
+        .catch((err) => console.error("Failed to add transaction", err));
+    }
   };
 
   const toggleRow = (id: string) => {
@@ -194,6 +227,15 @@ export default function BlockDetail() {
                             <IconButton
                               onClick={(e) => {
                                 e.stopPropagation();
+                                openEditDialog(t);
+                              }}
+                              color="primary"
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 handleDeleteTransaction(t.id);
                               }}
                               color="error"
@@ -268,7 +310,6 @@ export default function BlockDetail() {
                 Tổng kết thành viên
               </Typography>
 
-              {/* Tổng chi tiêu của phòng */}
               <Typography variant="subtitle1" align="center" sx={{ mb: 2, fontWeight: "bold", color: "green" }}>
                 Tổng chi tiêu phòng: {transactions.reduce((sum, t) => sum + t.amount, 0).toLocaleString()} ₫
               </Typography>
@@ -309,9 +350,9 @@ export default function BlockDetail() {
         </Grid>
       </Grid>
 
-      {/* Dialog thêm chi tiêu */}
+      {/* Dialog thêm/sửa chi tiêu */}
       <Dialog open={openAdd} onClose={() => setOpenAdd(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Thêm chi tiêu mới</DialogTitle>
+        <DialogTitle>{editTransaction ? "Chỉnh sửa chi tiêu" : "Thêm chi tiêu mới"}</DialogTitle>
         <DialogContent>
           <TextField
             label="Mô tả"
@@ -361,7 +402,7 @@ export default function BlockDetail() {
         <DialogActions>
           <Button onClick={() => setOpenAdd(false)}>Hủy</Button>
           <Button onClick={handleAddTransaction} variant="contained">
-            Thêm
+            {editTransaction ? "Cập nhật" : "Thêm"}
           </Button>
         </DialogActions>
       </Dialog>
