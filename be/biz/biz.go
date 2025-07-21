@@ -2,6 +2,7 @@ package mainbiz
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/google/uuid"
 	"my-source/sheet-payment/be/repository"
 	"time"
@@ -40,6 +41,7 @@ func (mb *MainBusiness) GetMembersByLockId(c *fiber.Ctx) error {
 
 	members, err := mb.memberRepo.GetByBlockID(blockID)
 	if err != nil {
+		log.Info("------------------------------", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{})
 	}
 
@@ -103,7 +105,7 @@ func (mb *MainBusiness) AddTransaction(c *fiber.Ctx) error {
 	}
 
 	type Req struct {
-		Amount      int                `json:"amount"`
+		Amount      float64            `json:"amount"`
 		Description string             `json:"description"`
 		Payer       string             `json:"payer"`
 		Ratios      map[string]float64 `json:"ratios"`
@@ -144,9 +146,9 @@ func (mb *MainBusiness) AddTransaction(c *fiber.Ctx) error {
 	}
 
 	// Prepare details
-	details := make(map[string]int)
+	details := make(map[string]float64)
 	for memberID, weight := range req.Ratios {
-		share := int(float64(req.Amount) * (weight / totalWeight))
+		share := req.Amount * (weight / totalWeight)
 		details[memberID] = share
 	}
 
@@ -218,7 +220,7 @@ func (mb *MainBusiness) DeleteTransaction(c *fiber.Ctx) error {
 	}
 
 	for memberID, weight := range tx.Ratios {
-		share := int(float64(tx.Amount) * (weight / totalWeight))
+		share := tx.Amount * (weight / totalWeight)
 		if memberID == tx.Payer {
 			// Payer previously gained (credit), now subtract it back
 			err = mb.memberRepo.UpdateDebt(memberID, -(tx.Amount - share))
@@ -248,7 +250,7 @@ func (mb *MainBusiness) DeleteBlock(c *fiber.Ctx) error {
 	blockID := c.Params("blockID")
 	err := mb.blockRepo.DeleteBlock(blockID)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		return fiber.NewError(fiber.StatusForbidden, err.Error())
 	}
 
 	return nil

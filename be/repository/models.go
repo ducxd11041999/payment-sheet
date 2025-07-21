@@ -7,16 +7,16 @@ type Member struct {
 	BlockID string  `json:"block_id"`
 	Name    string  `json:"name"`
 	Ratio   float64 `json:"ratio"`
-	Debt    int     `json:"debt"`
+	Debt    float64 `json:"debt"`
 }
 
 type Transaction struct {
 	ID          string             `json:"id"`
 	BlockID     string             `json:"block_id"`
 	Description string             `json:"description"`
-	Amount      int                `json:"amount"`
+	Amount      float64            `json:"amount"`
 	Payer       string             `json:"payer"`
-	Details     map[string]int     `json:"details"`
+	Details     map[string]float64 `json:"details"`
 	Ratios      map[string]float64 `json:"ratios"`
 	CreatedAt   time.Time          `json:"created_at"`
 }

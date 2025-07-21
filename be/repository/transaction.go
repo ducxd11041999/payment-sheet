@@ -27,7 +27,7 @@ func (r *TransactionRepository) GetByBlockID(blockID string) ([]Transaction, err
 		var ratiosJSON []byte
 
 		tx.BlockID = blockID
-		tx.Details = map[string]int{}
+		tx.Details = map[string]float64{}
 		tx.Ratios = map[string]float64{}
 
 		err := rows.Scan(&tx.ID, &tx.Description, &tx.Amount, &tx.Payer, &tx.CreatedAt, &ratiosJSON)
@@ -45,7 +45,7 @@ func (r *TransactionRepository) GetByBlockID(blockID string) ([]Transaction, err
 		}
 		for detailRows.Next() {
 			var memberID string
-			var amount int
+			var amount float64
 			if err := detailRows.Scan(&memberID, &amount); err != nil {
 				detailRows.Close()
 				return nil, err
@@ -73,7 +73,7 @@ func (r *TransactionRepository) Add(tx Transaction) error {
 	return err
 }
 
-func (r *TransactionRepository) AddDetails(txID string, details map[string]int) error {
+func (r *TransactionRepository) AddDetails(txID string, details map[string]float64) error {
 	stmt, err := r.DB.Prepare(`
 		INSERT INTO transaction_details (transaction_id, member_id, amount)
 		VALUES ($1, $2, $3)
@@ -94,7 +94,8 @@ func (r *TransactionRepository) AddDetails(txID string, details map[string]int) 
 func (r *TransactionRepository) GetByID(id string) (Transaction, error) {
 	var tx Transaction
 	var ratiosJson []byte
-	err := r.DB.QueryRow(`SELECT id, block_id, payer, amount, description, created_at, ratios FROM transactions WHERE id = $1`, id).
+	err := r.DB.QueryRow(`SELECT id, block_id, payer, amount, 
+       description, created_at, ratios FROM transactions WHERE id = $1`, id).
 		Scan(&tx.ID, &tx.BlockID, &tx.Payer, &tx.Amount, &tx.Description, &tx.CreatedAt, &ratiosJson)
 	if err != nil {
 		return tx, err
@@ -103,8 +104,8 @@ func (r *TransactionRepository) GetByID(id string) (Transaction, error) {
 	return tx, nil
 }
 
-func (r *TransactionRepository) GetDetails(id string) (map[string]int, error) {
-	details := make(map[string]int)
+func (r *TransactionRepository) GetDetails(id string) (map[string]float64, error) {
+	details := make(map[string]float64)
 	rows, err := r.DB.Query(`SELECT member_id, amount FROM transaction_details WHERE transaction_id = $1`, id)
 	if err != nil {
 		return nil, err
@@ -112,7 +113,7 @@ func (r *TransactionRepository) GetDetails(id string) (map[string]int, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var mid string
-		var amt int
+		var amt float64
 		if err := rows.Scan(&mid, &amt); err != nil {
 			return nil, err
 		}
@@ -144,9 +145,20 @@ func (r *TransactionRepository) UpdateTransaction(payload UpdateTransactionPaylo
 		return fmt.Errorf("failed to get block_id: %w", err)
 	}
 
+	var lock bool
+	err = tx.QueryRow(`SELECT locked FROM blocks WHERE id = $1`, blockID).Scan(&lock)
+	if err != nil || lock {
+		return fmt.Errorf("failed to get block or block is locking: %w", err)
+	}
+
 	// Cập nhật transaction
-	_, err = tx.Exec(`UPDATE transactions SET description=$1, amount=$2, payer=$3 WHERE id=$4`,
-		payload.Description, payload.Amount, payload.Payer, payload.ID)
+	ratiosJSON, err := json.Marshal(payload.Ratios)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`UPDATE transactions SET description=$1, amount=$2, payer=$3, ratios=$4 WHERE id=$5`,
+		payload.Description, payload.Amount, payload.Payer, ratiosJSON, payload.ID)
 	if err != nil {
 		return err
 	}
@@ -165,7 +177,7 @@ func (r *TransactionRepository) UpdateTransaction(payload UpdateTransactionPaylo
 	}
 
 	for memberID, ratio := range payload.Ratios {
-		amount := int(float64(payload.Amount) * (ratio / totalRatio))
+		amount := payload.Amount * (ratio / totalRatio)
 		_, err = tx.Exec(
 			`INSERT INTO transaction_details (transaction_id, member_id, amount) VALUES ($1, $2, $3)`,
 			payload.ID, memberID, amount,
@@ -188,7 +200,7 @@ func (r *TransactionRepository) UpdateMembersDebtTx(tx *sql.Tx, blockID string) 
 		SET debt = COALESCE((
 			SELECT SUM(
 				CASE 
-					WHEN t.payer = m.id THEN t.amount  -- đã trả
+					WHEN t.payer = m.id THEN t.amount
 					ELSE 0
 				END
 			) - COALESCE((

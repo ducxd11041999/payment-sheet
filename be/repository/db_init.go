@@ -28,14 +28,14 @@ func InitDB() *sql.DB {
 			block_id TEXT,
 			name TEXT,
 			ratio FLOAT,
-			debt INT,
+			debt FLOAT,
 			FOREIGN KEY (block_id) REFERENCES blocks(id)
 		)`,
 		`CREATE TABLE IF NOT EXISTS transactions (
 			id TEXT PRIMARY KEY,
 			block_id TEXT,
 			payer TEXT,
-			amount INT,
+			amount FLOAT,
 			description TEXT,
 			created_at TIMESTAMP,
 			ratios JSONB,
@@ -44,7 +44,7 @@ func InitDB() *sql.DB {
 		`CREATE TABLE IF NOT EXISTS transaction_details (
 			transaction_id TEXT,
 			member_id TEXT,
-			amount INT,
+			amount FLOAT,
 			PRIMARY KEY (transaction_id, member_id)
 		)`,
 		`CREATE TABLE IF NOT EXISTS users (

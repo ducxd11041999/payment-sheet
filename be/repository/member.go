@@ -61,7 +61,7 @@ func (r *MemberRepository) Create(members []Member) error {
 	return nil
 }
 
-func (r *MemberRepository) UpdateDebt(id string, delta int) error {
+func (r *MemberRepository) UpdateDebt(id string, delta float64) error {
 	_, err := r.DB.Exec(`UPDATE members SET debt = debt + $1 WHERE id = $2`, delta, id)
 	return err
 }

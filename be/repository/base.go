@@ -14,16 +14,16 @@ type IMemberRepository interface {
 	GetAll() ([]Member, error)
 	GetByBlockID(blockID string) ([]Member, error)
 	Create(members []Member) error
-	UpdateDebt(id string, delta int) error
+	UpdateDebt(id string, delta float64) error
 	GetDebtsByBlockID(blockID string) (map[string]int, error)
 }
 
 type ITransactionRepository interface {
 	GetByID(id string) (Transaction, error)
-	GetDetails(id string) (map[string]int, error)
+	GetDetails(id string) (map[string]float64, error)
 	GetByBlockID(blockID string) ([]Transaction, error)
 	Add(tx Transaction) error
-	AddDetails(txID string, details map[string]int) error
+	AddDetails(txID string, details map[string]float64) error
 	Delete(id string) error
 	UpdateTransaction(payload UpdateTransactionPayload) error
 }

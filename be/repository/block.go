@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -60,6 +61,7 @@ func (r *BlockRepository) Create(block Block) error {
 	}
 	for _, m := range block.Members {
 		m.ID = uuid.New().String()
+		m.Name = strings.TrimSpace(m.Name)
 		if _, err := stmt.Exec(m.ID, block.ID, m.Name, m.Ratio, m.Debt); err != nil {
 			return err
 		}
@@ -86,6 +88,15 @@ func (r *BlockRepository) GetAllBlocks() ([]Block, error) {
 }
 
 func (r *BlockRepository) DeleteBlock(blockID string) error {
+	_, lock, err := r.GetIDByMonth(blockID)
+	if err != nil {
+		return err
+	}
+
+	if lock {
+		return fiber.NewError(fiber.StatusConflict, "block locked")
+	}
+
 	tx, err := r.DB.Begin()
 	if err != nil {
 		return err
