@@ -102,7 +102,7 @@ export default function BlockDetail() {
 
   const openAddDialog = () => {
     const initialRatios = members.reduce<Record<string, number>>((acc, m) => {
-      acc[m.id] = 0;
+      acc[m.id] = 1;
       return acc;
     }, {});
     setNewDesc("");
@@ -370,12 +370,17 @@ export default function BlockDetail() {
             onChange={(e) => setNewAmount(e.target.value)}
           />
           <FormControl fullWidth margin="normal">
-            <InputLabel>Người trả</InputLabel>
-            <Select value={newPayer} onChange={(e) => setNewPayer(e.target.value)}>
+            <InputLabel id="payer-label">Người trả</InputLabel>
+            <Select
+                labelId="payer-label"
+                value={newPayer}
+                onChange={(e) => setNewPayer(e.target.value)}
+                label="Người trả"
+            >
               {members.map((m) => (
-                <MenuItem key={m.id} value={m.id}>
-                  {m.name}
-                </MenuItem>
+                  <MenuItem key={m.id} value={m.id}>
+                    {m.name}
+                  </MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -393,7 +398,7 @@ export default function BlockDetail() {
               onChange={(e) =>
                 setNewRatios((prev) => ({
                   ...prev,
-                  [m.id]: parseFloat(e.target.value) || 0,
+                  [m.id]: parseFloat(e.target.value) < 0? 0: parseFloat(e.target.value),
                 }))
               }
             />
