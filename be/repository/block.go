@@ -88,7 +88,7 @@ func (r *BlockRepository) GetAllBlocks() ([]Block, error) {
 }
 
 func (r *BlockRepository) DeleteBlock(blockID string) error {
-	_, lock, err := r.GetIDByMonth(blockID)
+	_, lock, err := r.Get(blockID)
 	if err != nil {
 		return err
 	}
