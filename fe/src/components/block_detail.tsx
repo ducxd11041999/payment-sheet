@@ -208,7 +208,7 @@ export default function BlockDetail() {
                 <TableBody>
                   {transactions.length > 0 ? (
                     transactions.map((t, index) => (
-                      <>
+                      <div key={t.id}>
                         <TableRow
                           key={t.id}
                           hover
@@ -287,7 +287,7 @@ export default function BlockDetail() {
                             </Collapse>
                           </TableCell>
                         </TableRow>
-                      </>
+                      </div>
                     ))
                   ) : (
                     <TableRow>
