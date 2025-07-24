@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Typography,
@@ -205,10 +206,10 @@ export default function BlockDetail() {
                     </TableCell>
                   </TableRow>
                 </TableHead>
-                <TableBody>
+                <TableBody key={"body"}>
                   {transactions.length > 0 ? (
                     transactions.map((t, index) => (
-                      <div key={t.id}>
+                        <React.Fragment key={t.id}>
                         <TableRow
                           key={t.id}
                           hover
@@ -244,7 +245,7 @@ export default function BlockDetail() {
                             </IconButton>
                           </TableCell>
                         </TableRow>
-                        <TableRow>
+                        <TableRow key={t.id+"details"}>
                           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
                             <Collapse in={expandedRow === t.id} timeout="auto" unmountOnExit>
                               <Box margin={2}>
@@ -287,7 +288,7 @@ export default function BlockDetail() {
                             </Collapse>
                           </TableCell>
                         </TableRow>
-                      </div>
+                        </React.Fragment>
                     ))
                   ) : (
                     <TableRow>
