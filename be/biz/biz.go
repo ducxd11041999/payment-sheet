@@ -2,7 +2,6 @@ package mainbiz
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/log"
 	"github.com/google/uuid"
 	"my-source/sheet-payment/be/repository"
 	"time"
@@ -41,7 +40,6 @@ func (mb *MainBusiness) GetMembersByLockId(c *fiber.Ctx) error {
 
 	members, err := mb.memberRepo.GetByBlockID(blockID)
 	if err != nil {
-		log.Info("------------------------------", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{})
 	}
 
