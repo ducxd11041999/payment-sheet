@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"my-source/sheet-payment/be/repository"
+	"sort"
 	"time"
 )
 
@@ -187,6 +188,10 @@ func (mb *MainBusiness) GetTransactionsByBlock(c *fiber.Ctx) error {
 		return nil
 	}
 	txs, err := mb.transactionRepo.GetByBlockID(blockID)
+	sort.Slice(txs, func(i, j int) bool {
+		return txs[i].CreatedAt.After(txs[j].CreatedAt)
+	})
+
 	return c.JSON(txs)
 }
 
