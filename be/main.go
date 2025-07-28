@@ -227,6 +227,12 @@ func main() {
 
 	protected := app.Group("/", jwtware.New(jwtware.Config{
 		SigningKey: authenhandler.JwtSecret,
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error":   "unauthorized",
+				"message": "Token is invalid or expired",
+			})
+		},
 	}))
 
 	protected.Use(factory.GetLogging().LogUserActivity())

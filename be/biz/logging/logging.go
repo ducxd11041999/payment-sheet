@@ -2,7 +2,9 @@ package middlewarelogging
 
 import (
 	"log"
+	authenhandler "my-source/sheet-payment/be/biz/auth"
 	"my-source/sheet-payment/be/repository"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,10 +25,15 @@ func (lg *Logger) LogUserActivity() fiber.Handler {
 		start := time.Now()
 
 		user := "anonymous"
-		if token := c.Locals("user"); token != nil {
-			if claims, ok := token.(*jwt.Token); ok {
-				if claimsMap, ok := claims.Claims.(jwt.MapClaims); ok {
-					if username, ok := claimsMap["username"].(string); ok {
+		authHeader := c.Get("Authorization")
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+			token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+				return []byte(authenhandler.JwtSecret), nil
+			})
+			if err == nil && token.Valid {
+				if claims, ok := token.Claims.(jwt.MapClaims); ok {
+					if username, ok := claims["username"].(string); ok {
 						user = username
 					}
 				}
@@ -35,7 +42,7 @@ func (lg *Logger) LogUserActivity() fiber.Handler {
 
 		log.Printf("[User: %s] %s %s at %s", user, c.Method(), c.Path(), start.Format(time.RFC3339))
 		lWrite := repository.UserLog{
-			Username: c.Method(),
+			Username: user,
 			Method:   c.Method(),
 			Path:     c.Path(),
 		}
