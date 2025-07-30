@@ -42,6 +42,11 @@ export default function Dashboard() {
             .catch((err) => {
                 console.error("Failed to load blocks", err);
                 setBlocks([]);
+                if (err.status === 401) {
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("username");
+                    navigate(`/login`)
+                }
             })
             .finally(() => setLoading(false));
     };
