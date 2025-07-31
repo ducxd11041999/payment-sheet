@@ -45,7 +45,7 @@ export default function Dashboard() {
                 if (err.status === 401) {
                     localStorage.removeItem("token");
                     localStorage.removeItem("username");
-                    navigate(`/login`)
+                    window.location.href = "/login";
                 }
             })
             .finally(() => setLoading(false));

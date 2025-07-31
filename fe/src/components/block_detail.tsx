@@ -69,6 +69,14 @@ export default function BlockDetail() {
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
   const token = localStorage.getItem("token");
 
+  const backLogin = (err: any) => {
+    if (err.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+      window.location.href = "/login";
+    }
+  }
+
   const fetchData = useCallback(async () => {
     try {
       const [transRes, membersRes] = await Promise.all([
@@ -81,6 +89,7 @@ export default function BlockDetail() {
       console.error("Failed to load block details", err);
       setTransactions([]);
       setMembers([]);
+      backLogin(err)
     } finally {
       setLoading(false);
     }
@@ -98,7 +107,10 @@ export default function BlockDetail() {
   const handleDeleteTransaction = (id: string) => {
     deleteTransaction(id)
       .then(fetchData)
-      .catch((err) => console.error("Failed to delete transaction", err));
+      .catch((err) => {
+        console.error("Failed to delete transaction", err)
+        backLogin(err)
+      });
   };
 
   const openAddDialog = () => {
@@ -136,7 +148,10 @@ export default function BlockDetail() {
           setEditTransaction(null);
           fetchData();
         })
-        .catch((err) => console.error("Failed to update transaction", err));
+        .catch((err) => {
+          console.error("Failed to update transaction", err)
+          backLogin(err)
+        });
     } else {
       addTransaction(month!, {
         description: newDesc,
@@ -148,7 +163,10 @@ export default function BlockDetail() {
           setOpenAdd(false);
           fetchData();
         })
-        .catch((err) => console.error("Failed to add transaction", err));
+        .catch((err) => {
+          console.error("Failed to add transaction", err)
+          backLogin(err)
+        });
     }
   };
 
